@@ -4,7 +4,7 @@ A casino-style prize roulette application built with Python, designed to run on 
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [About the Project](#-about-the-project)
 - [Features](#-features)
@@ -17,13 +17,13 @@ A casino-style prize roulette application built with Python, designed to run on 
 
 ---
 
-## 📖 About the Project
+## About the Project
 
 This project was developed as a university assignment. It consists of a touchscreen-friendly roulette wheel interface where users can register, spin the wheel, and win prizes drawn from a limited inventory. All activity is stored in a local SQLite database.
 
 ---
 
-## ✨ Features
+## Features
 
 - 🎡 Animated casino-style spinning wheel
 - 👤 Player registration with name and age
@@ -34,7 +34,7 @@ This project was developed as a university assignment. It consists of a touchscr
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -46,7 +46,7 @@ No external dependencies required — everything runs on the Python standard lib
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Projeto_Roleta/
@@ -59,7 +59,7 @@ Projeto_Roleta/
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 The app uses a local SQLite database with the following tables:
 
@@ -90,7 +90,7 @@ The app uses a local SQLite database with the following tables:
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -114,7 +114,7 @@ The database file `Projeto_Roleta.db` will be created automatically on first run
 
 ---
 
-## 🖥️ Usage
+## Usage
 
 1. Launch the app on a touchscreen computer
 2. Enter your name to register as a player
@@ -125,7 +125,7 @@ The database file `Projeto_Roleta.db` will be created automatically on first run
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Database setup and schema
 - [x] Player registration
@@ -137,7 +137,7 @@ The database file `Projeto_Roleta.db` will be created automatically on first run
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 Developed for a university project.
 
