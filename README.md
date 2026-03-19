@@ -1,23 +1,10 @@
-# 🎰 Projeto Roleta — Prize Roulette
+# Projeto Roleta — Prize Roulette
 
 A casino-style prize roulette application built with Python, designed to run on a touchscreen computer. Players spin a wheel to win prizes, with full inventory tracking, player registration, and spin history logging.
 
 ---
 
-## 📋 Table of Contents
-
-- [About the Project](#-about-the-project)
-- [Features](#features)
-- [Tech Stack](#-tech-stack)
-- [Project Structure](#project-structure)
-- [Database Schema](#-database-schema)
-- [Getting Started](#-getting-started)
-- [Usage](#usage)
-- [Roadmap](#roadmap)
-
----
-
-## 📖 About the Project
+## About the Project
 
 This project was developed as a university assignment. It consists of a touchscreen-friendly roulette wheel interface where users can register, spin the wheel, and win prizes drawn from a limited inventory. All activity is stored in a local SQLite database.
 
@@ -34,7 +21,7 @@ This project was developed as a university assignment. It consists of a touchscr
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -59,7 +46,7 @@ Projeto_Roleta/
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 The app uses a local SQLite database with the following tables:
 
@@ -90,7 +77,7 @@ The app uses a local SQLite database with the following tables:
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -137,7 +124,7 @@ The database file `Projeto_Roleta.db` will be created automatically on first run
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 Developed for a university project.
 
