@@ -115,7 +115,7 @@ The database file `Projeto_Roleta.db` will be created automatically on first run
 ## Roadmap
 
 - [x] Database setup and schema
-- [x] Player registration
+- [ ] Player registration
 - [ ] Spinning wheel animation
 - [ ] Prize awarding logic
 - [ ] Admin panel to manage prizes and stock
@@ -126,9 +126,9 @@ The database file `Projeto_Roleta.db` will be created automatically on first run
 
 ## Ownership
 
-Santiago Araújo
-Pedro Campos
-Rodrigo Lopes
+- Santiago Araújo
+- Pedro Campos
+- Rodrigo Lopes
 
 Developed for a university project.
 
