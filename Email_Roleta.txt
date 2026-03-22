@@ -1,0 +1,339 @@
+_____________________________________________________________________________________________________________
+# Bibliotecas a importar
+
+import sqlite3
+import tkinter as tk
+from tkinter import simpledialog, messagebox
+import random
+import math
+import re
+_____________________________________________________________________________________________________________
+# Expressão Regular do email
+
+EMAIL_REGEX = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+_____________________________________________________________________________________________________________
+    # Esta tabela guarda os participantes através do email.
+
+    # Não é um sistema de login: serve apenas para saber quem ganhou ou não, para se atribuir o prémio
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS participantes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            tentativas_disponiveis INTEGER NOT NULL DEFAULT 1,
+            total_jogadas INTEGER NOT NULL DEFAULT 0,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+_____________________________________________________________________________________________________________
+    # Substituir o bloco da tabela jogadas no código por esta
+
+    # Aqui fica registado o histórico de todas as jogadas
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS jogadas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_participante INTEGER NOT NULL,
+            email_snapshot TEXT NOT NULL,
+            id_premio INTEGER NOT NULL,
+            premio_nome TEXT NOT NULL,
+            peso_usado REAL NOT NULL,
+            data_jogada TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_participante) REFERENCES participantes(id),
+            FOREIGN KEY (id_premio) REFERENCES premios(id)
+        )
+    """)
+_____________________________________________________________________________________________________________
+# Colocar este bloco do código no código python
+
+def obter_ou_criar_participante(email):
+    conn = ligar_bd()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM participantes WHERE email = ?", (email,))
+    participante = cursor.fetchone()
+
+    # Se o email ainda não existir, cria um novo participante
+    if participante is None:
+        cursor.execute("""
+            INSERT INTO participantes (email, tentativas_disponiveis, total_jogadas)
+            VALUES (?, 1, 0)
+        """, (email,))
+        conn.commit()
+
+        cursor.execute("SELECT * FROM participantes WHERE email = ?", (email,))
+        participante = cursor.fetchone()
+
+    conn.close()
+    return participante
+
+
+def obter_participante_por_email(email):
+    conn = ligar_bd()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM participantes WHERE email = ?", (email,))
+    participante = cursor.fetchone()
+    conn.close()
+    return participante
+
+
+def atualizar_tentativas(email, novo_valor):
+    conn = ligar_bd()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE participantes
+        SET tentativas_disponiveis = ?
+        WHERE email = ?
+    """, (novo_valor, email))
+    conn.commit()
+    conn.close()
+
+
+def alterar_tentativas(email, delta):
+    conn = ligar_bd()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE participantes
+        SET tentativas_disponiveis = tentativas_disponiveis + ?
+        WHERE email = ?
+    """, (delta, email))
+    conn.commit()
+    conn.close()
+
+
+def incrementar_total_jogadas(email):
+    conn = ligar_bd()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE participantes
+        SET total_jogadas = total_jogadas + 1
+        WHERE email = ?
+    """, (email,))
+    conn.commit()
+    conn.close()
+
+
+def validar_email(email):
+    if email is None:
+        return False
+    email = email.strip()
+    return re.match(EMAIL_REGEX, email) is not None
+
+
+def pedir_email_valido(root):
+    """
+    Pede o email ao utilizador até ser introduzido um valor válido.
+    """
+    while True:
+        email = simpledialog.askstring(
+            "Identificação",
+            "Introduza o seu email para jogar:",
+            parent=root
+        )
+
+        if email is None:
+            continue
+
+        email = email.strip().lower()
+
+        if not validar_email(email):
+            messagebox.showerror(
+                "Email inválido",
+                "Por favor, introduza um email válido.",
+                parent=root
+            )
+            continue
+
+        return email
+_____________________________________________________________________________________________________________
+    # Substituir a função registar jogada por esta
+
+        def registar_jogada(id_participante, email, id_premio, nome_premio, peso_usado):
+    conn = ligar_bd()
+    cursor = conn.cursor()
+
+    # Guarda uma nova jogada no histórico
+    cursor.execute("""
+        INSERT INTO jogadas (id_participante, email_snapshot, id_premio, premio_nome, peso_usado)
+        VALUES (?, ?, ?, ?, ?)
+    """, (id_participante, email, id_premio, nome_premio, peso_usado))
+
+    conn.commit()
+    conn.close()
+_____________________________________________________________________________________________________________
+# Colocar no init
+
+            self.email_atual = None
+        self.participante_atual = None
+_____________________________________________________________________________________________________________
+# Dentro do init e antes do label resultado
+
+        # Informação visível sobre o participante atual
+        self.label_email = tk.Label(root, text="Email atual: -", font=("Arial", 11, "bold"))
+        self.label_email.pack()
+
+        self.label_tentativas = tk.Label(root, text="Tentativas disponíveis: -", font=("Arial", 11))
+        self.label_tentativas.pack()
+_____________________________________________________________________________________________________________
+# No fim do init, colocar isto
+
+        # Ao arrancar o programa, pede logo o primeiro email
+        self.preparar_proximo_participante()
+
+_____________________________________________________________________________________________________________
+# Acrescentar este bloco à classe RolPremios
+
+    def atualizar_labels_participante(self):
+        if self.participante_atual is None:
+            self.label_email.config(text="Email atual: -")
+            self.label_tentativas.config(text="Tentativas disponíveis: -")
+            return
+
+        self.label_email.config(text=f"Email atual: {self.participante_atual['email']}")
+        self.label_tentativas.config(
+            text=f"Tentativas disponíveis: {self.participante_atual['tentativas_disponiveis']}"
+        )
+
+    def preparar_proximo_participante(self):
+        while True:
+            email = pedir_email_valido(self.root)
+            if email is None:
+                return
+
+            participante = obter_ou_criar_participante(email)
+
+            # Se este email já tiver esgotado as tentativas, pede outro
+            if participante["tentativas_disponiveis"] <= 0:
+                messagebox.showwarning(
+                    "Sem tentativas",
+                    "Este email já utilizou todas as tentativas disponíveis.\n"
+                    "Introduza outro email.",
+                    parent=self.root
+                )
+                continue
+
+            self.email_atual = email
+            self.participante_atual = participante
+            self.label_resultado.config(text="")
+            self.label_info.config(text="")
+            self.atualizar_labels_participante()
+            break
+
+    def perguntar_novo_email(self):
+        messagebox.showinfo(
+            "Fim do jogo",
+            "As tentativas deste email terminaram.\n"
+            "Será pedido um novo email para a próxima jogada.",
+            parent=self.root
+        )
+        self.preparar_proximo_participante()
+
+_____________________________________________________________________________________________________________
+# Substitiur o método inicia girar por este bloco
+
+    def iniciar_girar(self):
+        if self.a_girar:
+            return
+
+        if self.participante_atual is None:
+            self.preparar_proximo_participante()
+            if self.participante_atual is None:
+                return
+
+        # Atualiza os dados do participante antes de iniciar a jogada
+        self.participante_atual = obter_participante_por_email(self.email_atual)
+
+        if self.participante_atual["tentativas_disponiveis"] <= 0:
+            messagebox.showinfo(
+                "Sem tentativas",
+                "Este email já não tem tentativas disponíveis.",
+                parent=self.root
+            )
+            self.preparar_proximo_participante()
+            return
+
+        # Ao começar a jogada, é descontada uma tentativa
+        alterar_tentativas(self.email_atual, -1)
+        incrementar_total_jogadas(self.email_atual)
+
+        self.participante_atual = obter_participante_por_email(self.email_atual)
+        self.atualizar_labels_participante()
+
+        # Volta a ler os prémios da base de dados e escolhe um
+        # com base nos pesos atuais
+        self.recarregar_premios()
+        premio_escolhido = self.escolher_premio_por_peso()
+
+        self.premio_sorteado = premio_escolhido
+        self.indice_premio_sorteado = next(
+            i for i, p in enumerate(self.premios) if p["id"] == premio_escolhido["id"]
+        )
+
+        # Prepara a animação da roleta para ela terminar exatamente
+        # no prémio que foi sorteado
+        self.angulo_inicial_animacao = self.angulo_atual
+        voltas_extra = random.randint(4, 6)
+
+        # O centro da fatia sorteada tem de ficar alinhado com a seta do topo
+        angulo_desejado = 90 - (
+            self.indice_premio_sorteado * self.angulo_segmento + self.angulo_segmento / 2
+        )
+
+        self.angulo_final_animacao = angulo_desejado + 360 * voltas_extra
+
+        # Se o valor final ficar atrás da posição atual, acrescenta mais voltas
+        while self.angulo_final_animacao <= self.angulo_inicial_animacao:
+            self.angulo_final_animacao += 360
+
+        self.frame_atual = 0
+        self.total_frames = 120
+
+        self.a_girar = True
+        self.btn_girar.config(state="disabled")
+        self.label_resultado.config(text="")
+        self.label_info.config(text="A girar...")
+
+        self.animar_roda()
+
+_____________________________________________________________________________________________________________
+# Substituir o método finalizar giro
+
+    def finalizar_giro(self):
+        premio = self.premio_sorteado
+
+        # Guarda a jogada no histórico da base de dados
+        registar_jogada(
+            id_participante=self.participante_atual["id"],
+            email=self.participante_atual["email"],
+            id_premio=premio["id"],
+            nome_premio=premio["nome"],
+            peso_usado=float(premio["peso_atual"])
+        )
+
+        # Se sair "Tente novamente", o participante recebe de volta mais uma tentativa
+        if premio["nome"].strip().lower() == "tente novamente":
+            alterar_tentativas(self.email_atual, 1)
+            mensagem_extra = "Saiu 'Tente novamente': ganhou mais uma tentativa."
+        else:
+            mensagem_extra = "Tentativa concluída."
+
+        # Depois da jogada, os pesos são recalculados com base no histórico atualizado
+        recalcular_pesos()
+
+        # Atualiza os dados do participante e os prémios após o recálculo dos pesos
+        self.participante_atual = obter_participante_por_email(self.email_atual)
+        self.recarregar_premios()
+        self.atualizar_labels_participante()
+
+        self.label_resultado.config(text=f"Prémio: {premio['nome']}")
+        self.label_info.config(
+            text=(
+                f"Email registado: {self.email_atual}\n"
+                f"{mensagem_extra}"
+            )
+        )
+
+        self.a_girar = False
+        self.btn_girar.config(state="normal")
+
+        # Se este email já não tiver tentativas, o programa pede outro
+        if self.participante_atual["tentativas_disponiveis"] <= 0:
+            self.root.after(500, self.perguntar_novo_email)
