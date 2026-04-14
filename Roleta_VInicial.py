@@ -1,4 +1,4 @@
-﻿import sqlite3
+import sqlite3
 import tkinter as tk
 from tkinter import simpledialog, messagebox
 import random
@@ -12,14 +12,14 @@ NOME_BD = "Projeto_Roleta_teste.db"
 EMAIL_REGEX = r"^[\w\.-]+@[\w\.-]+\.\w+$"
 
 PREMIOS_INICIAIS = [
-    {"nome": "5€ FNAC",         "cor": "#FF5733", "peso_base": 6,  "peso_min": 3,  "peso_max": 7},
-    {"nome": "5€ WORTEN",       "cor": "#33FF57", "peso_base": 6,  "peso_min": 3,  "peso_max": 7},
-    {"nome": "10€ WORTEN",      "cor": "#3357FF", "peso_base": 3,  "peso_min": 1,  "peso_max": 5},
-    {"nome": "Tente novamente", "cor": "#FF33A1", "peso_base": 15, "peso_min": 8,  "peso_max": 17},
-    {"nome": "Fita Lusíada",    "cor": "#A133FF", "peso_base": 10, "peso_min": 8,  "peso_max": 12},
-    {"nome": "Caderno Lusíada", "cor": "#33FFF5", "peso_base": 10, "peso_min": 8,  "peso_max": 12},
-    {"nome": "Caneta Lusíada",  "cor": "#F5FF33", "peso_base": 10, "peso_min": 8,  "peso_max": 12},
-    {"nome": "Sem Prémio",      "cor": "#FF8C33", "peso_base": 40, "peso_min": 35, "peso_max": 50},
+    {"nome": "5€ FNAC",         "cor": "#FF5733", "peso_base": 6,  "peso_min": 3,  "peso_max": 7,  "tenta_novamente": 0},
+    {"nome": "5€ WORTEN",       "cor": "#33FF57", "peso_base": 6,  "peso_min": 3,  "peso_max": 7,  "tenta_novamente": 0},
+    {"nome": "10€ WORTEN",      "cor": "#3357FF", "peso_base": 3,  "peso_min": 1,  "peso_max": 5,  "tenta_novamente": 0},
+    {"nome": "Tente novamente", "cor": "#FF33A1", "peso_base": 15, "peso_min": 8,  "peso_max": 17, "tenta_novamente": 1},
+    {"nome": "Fita Lusíada",    "cor": "#A133FF", "peso_base": 10, "peso_min": 8,  "peso_max": 12, "tenta_novamente": 0},
+    {"nome": "Caderno Lusíada", "cor": "#33FFF5", "peso_base": 10, "peso_min": 8,  "peso_max": 12, "tenta_novamente": 0},
+    {"nome": "Caneta Lusíada",  "cor": "#F5FF33", "peso_base": 10, "peso_min": 8,  "peso_max": 12, "tenta_novamente": 0},
+    {"nome": "Sem Prémio",      "cor": "#FF8C33", "peso_base": 40, "peso_min": 35, "peso_max": 50, "tenta_novamente": 0},
 ]
 
 # =========================================================
@@ -46,7 +46,8 @@ def criar_tabelas():
             peso_atual REAL NOT NULL,
             peso_min REAL NOT NULL,
             peso_max REAL NOT NULL,
-            ativo INTEGER NOT NULL DEFAULT 1
+            ativo INTEGER NOT NULL DEFAULT 1,
+            tenta_novamente INTEGER NOT NULL DEFAULT 0
         )
     """)
 
@@ -97,8 +98,8 @@ def inserir_premios_iniciais():
     for premio in PREMIOS_INICIAIS:
         cursor.execute("""
             INSERT OR IGNORE INTO premios
-            (nome, cor, stock_atual, stock_inicial, peso_base, peso_atual, peso_min, peso_max, ativo)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+            (nome, cor, stock_atual, stock_inicial, peso_base, peso_atual, peso_min, peso_max, ativo, tenta_novamente)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
         """, (
             premio["nome"],
             premio["cor"],
@@ -107,7 +108,8 @@ def inserir_premios_iniciais():
             premio["peso_base"],
             premio["peso_base"],
             premio["peso_min"],
-            premio["peso_max"]
+            premio["peso_max"],
+            premio["tenta_novamente"]
         ))
 
     conn.commit()
@@ -200,6 +202,13 @@ def recalcular_pesos():
 
     soma_pesos_base = sum(float(p["peso_base"]) for p in premios)
 
+    # Fetch all prize counts in one query instead of one connection per prize
+    conn = ligar_bd()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id_premio, COUNT(*) as total FROM jogadas GROUP BY id_premio")
+    saidas_map = {row["id_premio"]: row["total"] for row in cursor.fetchall()}
+    conn.close()
+
     if total_jogadas == 0:
         for premio in premios:
             atualizar_peso_premio(
@@ -213,14 +222,14 @@ def recalcular_pesos():
         peso_base = float(premio["peso_base"])
         peso_min = float(premio["peso_min"])
         peso_max = float(premio["peso_max"])
-        saidas_reais = contar_saidas_premio(premio["id"])
+        saidas_reais = saidas_map.get(premio["id"], 0)
 
         saidas_esperadas = total_jogadas * (peso_base / soma_pesos_base)
-        diferenca = saidas_reais - saidas_esperadas
 
         if saidas_esperadas < 1:
             saidas_esperadas = 1
 
+        diferenca = saidas_reais - saidas_esperadas
         desvio_relativo = diferenca / saidas_esperadas
         fator = 1 - (0.25 * desvio_relativo)
 
@@ -251,18 +260,14 @@ def obter_ou_criar_participante(email):
     conn = ligar_bd()
     cursor = conn.cursor()
 
+    cursor.execute("""
+        INSERT OR IGNORE INTO participantes (email, tentativas_disponiveis, total_jogadas)
+        VALUES (?, 1, 0)
+    """, (email,))
+    conn.commit()
+
     cursor.execute("SELECT * FROM participantes WHERE email = ?", (email,))
     participante = cursor.fetchone()
-
-    if participante is None:
-        cursor.execute("""
-            INSERT INTO participantes (email, tentativas_disponiveis, total_jogadas)
-            VALUES (?, 1, 0)
-        """, (email,))
-        conn.commit()
-
-        cursor.execute("SELECT * FROM participantes WHERE email = ?", (email,))
-        participante = cursor.fetchone()
 
     conn.close()
     return participante
@@ -288,17 +293,6 @@ def alterar_tentativas(email, delta):
     conn.commit()
     conn.close()
 
-
-def incrementar_total_jogadas(email):
-    conn = ligar_bd()
-    cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE participantes
-        SET total_jogadas = total_jogadas + 1
-        WHERE email = ?
-    """, (email,))
-    conn.commit()
-    conn.close()
 
 
 def validar_email(email):
@@ -506,9 +500,6 @@ class RolPremios:
             self.preparar_proximo_participante()
             return
 
-        alterar_tentativas(self.email_atual, -1)
-        incrementar_total_jogadas(self.email_atual)
-
         self.participante_atual = obter_participante_por_email(self.email_atual)
         self.atualizar_labels_participante()
 
@@ -563,6 +554,8 @@ class RolPremios:
     def finalizar_giro(self):
         premio = self.premio_sorteado
 
+        alterar_tentativas(self.email_atual, -1)
+
         registar_jogada(
             id_participante=self.participante_atual["id"],
             email=self.participante_atual["email"],
@@ -573,7 +566,7 @@ class RolPremios:
 
         mensagem_extra = "Tentativa concluída."
 
-        if premio["nome"].strip().lower() == "tente novamente":
+        if premio["tenta_novamente"]:
             alterar_tentativas(self.email_atual, 1)
             mensagem_extra = "Saiu 'Tente novamente': ganhou mais uma tentativa."
 
@@ -606,5 +599,7 @@ if __name__ == "__main__":
     inserir_premios_iniciais()
 
     root = tk.Tk()
+    root.attributes('-fullscreen', True)
+    root.bind('<Escape>', lambda e: root.attributes('-fullscreen', False))
     app = RolPremios(root)
     root.mainloop()
