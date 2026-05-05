@@ -7,6 +7,7 @@ import re
 import csv
 from pathlib import Path
 
+
 # =========================================================
 # CONFIGURAÇÕES GERAIS DO PROGRAMA
 # =========================================================
@@ -62,10 +63,20 @@ def ler_premios_csv(caminho):
     premios = []
 
     with open(caminho, "r", encoding="utf-8-sig", newline="") as f:
-        leitor = csv.DictReader(f)
+        leitor = csv.reader(f)
+        rows = []
+        for row in leitor:
+            if row and not str(row[0]).strip().startswith('#'):
+                rows.append(row)
+
+        if not rows:
+            raise ValueError("O ficheiro CSV não tem linhas de dados válidas.")
+
+        fieldnames = [c.strip() for c in rows[0]]
+        data_rows = rows[1:]
 
         colunas_necessarias = {"nome", "peso_base", "peso_min", "peso_max"}
-        colunas_lidas = {c.strip().lower() for c in (leitor.fieldnames or [])}
+        colunas_lidas = {c.lower() for c in fieldnames}
 
         if not colunas_necessarias.issubset(colunas_lidas):
             raise ValueError(
@@ -73,17 +84,18 @@ def ler_premios_csv(caminho):
                 "nome, peso_base, peso_min, peso_max"
             )
 
-        for i, linha in enumerate(leitor, start=2):
-            nome = normalizar_nome_premio(linha.get("nome", ""))
+        for i, linha in enumerate(data_rows, start=2):
+            linha_dict = dict(zip(fieldnames, linha))
+            nome = normalizar_nome_premio(linha_dict.get("nome", ""))
 
             if not nome:
                 raise ValueError(f"Linha {i} do CSV sem nome de prémio.")
 
-            peso_base = texto_para_float(linha.get("peso_base", ""), "peso_base", nome)
-            peso_min = texto_para_float(linha.get("peso_min", ""), "peso_min", nome)
-            peso_max = texto_para_float(linha.get("peso_max", ""), "peso_max", nome)
+            peso_base = texto_para_float(linha_dict.get("peso_base", ""), "peso_base", nome)
+            peso_min = texto_para_float(linha_dict.get("peso_min", ""), "peso_min", nome)
+            peso_max = texto_para_float(linha_dict.get("peso_max", ""), "peso_max", nome)
 
-            cor = str(linha.get("cor", "") or "").strip()
+            cor = str(linha_dict.get("cor", "") or "").strip()
             if not cor:
                 cor = gerar_cor_aleatoria()
 
