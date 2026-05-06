@@ -2,9 +2,9 @@
 # Na linha de baixo esta escrito em que formato devem estar os premios, sendo que ha possibilidade de nao escolher uma cor. Os pesos minimos e maximos tm de ser, respetivamente, menores e maiores que o peso base.
 
 nome,peso_base,peso_min,peso_max,cor
-mochila, 20, 15, 23,
-bolsa, 10, 8, 12,
-mala, 25, 20, 30,
+caneta, 20, 15, 23,
+lapis, 10, 8, 12,
+moldura, 25, 20, 30,
 fita, 5, 3, 7,
 tente_novamente, 65, 60, 70,
 sem_premio, 80, 75, 90,

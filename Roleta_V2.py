@@ -33,29 +33,6 @@ def texto_para_float(valor, nome_campo, nome_premio):
 def normalizar_nome_premio(nome):
     return str(nome).strip()
 
-
-def parse_linha_txt(linha):
-    """
-    Aceita formatos como:
-      nome=5€ FNAC
-      peso_base=6
-      peso_min=3
-      peso_max=8
-      cor=#FFAA00
-
-    Também aceita:
-      nome: 5€ FNAC
-    """
-    if "=" in linha:
-        chave, valor = linha.split("=", 1)
-    elif ":" in linha:
-        chave, valor = linha.split(":", 1)
-    else:
-        return None, None
-
-    return chave.strip().lower(), valor.strip()
-
-
 # =========================================================
 # LEITURA DE PRÉMIOS A PARTIR DE CSV
 # =========================================================
@@ -114,80 +91,6 @@ def ler_premios_csv(caminho):
             })
 
     return premios
-
-
-def ler_premios_txt(caminho):
-    """
-    Formato do TXT:
-    Cada prémio é um bloco separado por linha em branco.
-
-    Exemplo:
-    nome=5€ FNAC
-    peso_base=6
-    peso_min=3
-    peso_max=8
-
-    nome=Tente novamente
-    peso_base=15
-    peso_min=10
-    peso_max=18
-    cor=#FF33A1
-    """
-    with open(caminho, "r", encoding="utf-8-sig") as f:
-        conteudo = f.read()
-
-    blocos = [b.strip() for b in conteudo.split("\n\n") if b.strip()]
-    premios = []
-
-    for idx, bloco in enumerate(blocos, start=1):
-        dados = {}
-
-        for linha in bloco.splitlines():
-            linha = linha.strip()
-            if not linha or linha.startswith("#"):
-                continue
-
-            chave, valor = parse_linha_txt(linha)
-            if chave is None:
-                raise ValueError(
-                    f"Bloco {idx}: linha inválida '{linha}'. "
-                    f"Use 'campo=valor' ou 'campo: valor'."
-                )
-
-            dados[chave] = valor
-
-        nome = normalizar_nome_premio(dados.get("nome", ""))
-        if not nome:
-            raise ValueError(f"Bloco {idx}: falta o campo 'nome'.")
-
-        if "peso_base" not in dados or "peso_min" not in dados or "peso_max" not in dados:
-            raise ValueError(
-                f"Bloco do prémio '{nome}': faltam campos obrigatórios "
-                f"(peso_base, peso_min, peso_max)."
-            )
-
-        peso_base = texto_para_float(dados["peso_base"], "peso_base", nome)
-        peso_min = texto_para_float(dados["peso_min"], "peso_min", nome)
-        peso_max = texto_para_float(dados["peso_max"], "peso_max", nome)
-
-        if peso_min > peso_base or peso_base > peso_max:
-            raise ValueError(
-                f"No prémio '{nome}' os pesos têm de respeitar: "
-                f"peso_min <= peso_base <= peso_max."
-            )
-
-        cor = dados.get("cor", "").strip() or gerar_cor_aleatoria()
-
-        premios.append({
-            "nome": nome,
-            "cor": cor,
-            "peso_base": peso_base,
-            "peso_min": peso_min,
-            "peso_max": peso_max
-        })
-
-    return premios
-
 
 def carregar_premios_do_ficheiro():
     caminho_csv = Path(FICHEIRO_PREMIOS_CSV)
@@ -332,8 +235,6 @@ def sincronizar_premios_com_ficheiro():
             if novo_peso_atual > premio["peso_max"]:
                 novo_peso_atual = premio["peso_max"]
 
-            # Se o peso base mudou muito e o peso atual ainda era igual ao base antigo,
-            # acompanha o novo base.
             if abs(peso_atual_antigo - peso_base_antigo) < 1e-9:
                 novo_peso_atual = premio["peso_base"]
 
