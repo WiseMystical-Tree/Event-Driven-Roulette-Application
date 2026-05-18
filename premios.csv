@@ -1,10 +1,11 @@
-# Este documento descreve como devem ser criados, adicionados ou removidos os premios da roleta.
-# Na linha de baixo esta escrito em que formato devem estar os premios, sendo que ha possibilidade de nao escolher uma cor. Os pesos minimos e maximos tm de ser, respetivamente, menores e maiores que o peso base.
+# Este documento descreve como devem ser criados, adicionados ou removidos os prémios da roleta.
+# Na linha seguinte está escrito em que formato devem estar os prémios. Existe a possibilidade de não escolher uma cor. 
+# Os pesos mínimos e máximos têm de ser, respetivamente, menores e maiores do que o peso base.
 
-nome,peso_base,peso_min,peso_max,cor
-caneta, 20, 15, 23,
-lapis, 10, 8, 12,
-moldura, 25, 20, 30,
-fita, 5, 3, 7,
-tente_novamente, 65, 60, 70,
-sem_premio, 80, 75, 90,
+nome,peso_base,peso_min,peso_max
+Caneta, 20, 15, 23
+Lápis, 10, 8, 12
+Moldura, 25, 20, 30
+Fita, 5, 3, 7
+Tente Novamente, 65, 60, 70
+Sem Prémio, 80, 75, 90

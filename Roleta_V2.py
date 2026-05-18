@@ -11,13 +11,15 @@ from pathlib import Path
 # =========================================================
 # CONFIGURAÇÕES GERAIS DO PROGRAMA
 # =========================================================
-NOME_BD = "Projeto_Roleta_teste.db"
-EMAIL_REGEX = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+NOME_BD = "Projeto_Roleta_teste.db"  # Nome da base de dados
+EMAIL_REGEX = r"^[\w\.-]+@[\w\.-]+\.\w+$"  # Expressão regular para validar email
 
 # O programa procura por premios.csv. Se não existir, não haverá prémios.
 FICHEIRO_PREMIOS_CSV = "premios.csv"
+
 # =========================================================
 def gerar_cor_aleatoria():
+    # Gera uma cor aleatória em formato hexadecimal
     return "#{:06X}".format(random.randint(0, 0xFFFFFF))
 
 
@@ -514,66 +516,124 @@ def pedir_email_valido(root):
 # CLASSE PRINCIPAL DA ROLETA
 # =========================================================
 class RolPremios:
+    # Classe principal para gerir a roleta de prémios com interface gráfica
     def __init__(self, root):
+        # Inicializa a janela principal e configurações da roleta
         self.root = root
-        self.root.title("Roleta de Prémios")
-        self.root.geometry("520x670")
+        self.root.title("Roleta da Sorte")
+        self.root.geometry("520x720")
         self.root.resizable(False, False)
+        self.root.config(bg="#1a1a1a")
 
-        self.raio_roleta = 190
-        self.centro_x = 250
-        self.centro_y = 220
+        # Configurações visuais da roleta
+        self.raio_roleta = 180      # Raio da roleta em píxeis
+        self.centro_x = 260         # Coordenada x do centro
+        self.centro_y = 260         # Coordenada y do centro
 
-        self.angulo_atual = 0
-        self.a_girar = False
-        self.premios = []
+        self.angulo_atual = 0       # Ângulo atual de rotação
+        self.a_girar = False        # Indica se está em animação
+        self.premios = []           # Lista de prémios disponíveis
 
         self.email_atual = None
         self.participante_atual = None
 
-        self.canvas = tk.Canvas(root, width=500, height=450, bg="white")
-        self.canvas.pack(pady=10)
+        # Canvas para desenhar a roleta estilo casino
+        self.canvas = tk.Canvas(root, width=520, height=520, bg="#1a1a1a", highlightthickness=0)
+        self.canvas.pack(pady=8)
 
-        self.label_email = tk.Label(root, text="Email atual: -", font=("Arial", 11, "bold"))
-        self.label_email.pack()
+        # Etiqueta com email do utilizador atual
+        self.label_email = tk.Label(
+            root,
+            text="Email atual: -",
+            font=("Arial", 10, "bold"),
+            bg="#1a1a1a",
+            fg="#ffffff"
+        )
+        self.label_email.pack(pady=3)
 
-        self.label_tentativas = tk.Label(root, text="Tentativas disponíveis: -", font=("Arial", 11))
-        self.label_tentativas.pack()
+        # Etiqueta com número de tentativas disponíveis
+        self.label_tentativas = tk.Label(
+            root,
+            text="Tentativas disponíveis: -",
+            font=("Arial", 10),
+            bg="#1a1a1a",
+            fg="#cccccc"
+        )
+        self.label_tentativas.pack(pady=2)
 
-        self.label_resultado = tk.Label(root, text="", font=("Arial", 16, "bold"))
-        self.label_resultado.pack(pady=10)
+        # Etiqueta para exibir o prémio sorteado
+        self.label_resultado = tk.Label(
+            root,
+            text="",
+            font=("Arial", 13, "bold"),
+            bg="#1a1a1a",
+            fg="#00ff00"
+        )
+        self.label_resultado.pack(pady=5)
 
+        # Etiqueta informativa com mensagens ao utilizador
         self.label_info = tk.Label(
             root,
             text="Pronto para jogar.",
-            font=("Arial", 10),
+            font=("Arial", 9),
+            bg="#1a1a1a",
+            fg="#aaaaaa",
             justify="center"
         )
-        self.label_info.pack(pady=5)
+        self.label_info.pack(pady=2)
 
+        # Botão principal para girar a roleta
         self.btn_girar = tk.Button(
             root,
             text="Girar!",
             font=("Arial", 12, "bold"),
-            command=self.iniciar_girar
+            command=self.iniciar_girar,
+            bg="#ff6600",
+            fg="white",
+            activebackground="#ff5500",
+            activeforeground="white",
+            relief="raised",
+            padx=20,
+            pady=7,
+            bd=3
         )
-        self.btn_girar.pack(pady=15)
+        self.btn_girar.pack(pady=6)
 
+        # Botão para recarregar prémios do ficheiro CSV
         self.btn_recarregar_premios = tk.Button(
             root,
-            text="Recarregar prémios do ficheiro",
-            font=("Arial", 10),
-            command=self.recarregar_premios_do_ficheiro
+            text="Recarregar prémios",
+            font=("Arial", 9),
+            command=self.recarregar_premios_do_ficheiro,
+            bg="#444444",
+            fg="white",
+            activebackground="#555555",
+            activeforeground="white",
+            relief="raised",
+            padx=12,
+            pady=4,
+            bd=2
         )
-        self.btn_recarregar_premios.pack(pady=5)
+        self.btn_recarregar_premios.pack(pady=3)
 
-        self.canvas.create_polygon(240, 15, 260, 15, 250, 30, fill="black", tags="seta")
+        # Desenha a seta indicadora no topo (triângulo)
+        self.canvas.create_polygon(
+            260, 50,
+            275, 30,
+            245, 30,
+            fill="#ff6600",
+            outline="#ffaa00",
+            width=2,
+            tags="seta"
+        )
 
+        # Carrega os prémios e desenha a roleta inicial
         self.recarregar_premios()
         self.desenhar_roda()
         self.preparar_proximo_participante()
 
     def atualizar_labels_participante(self):
+        # Atualiza os rótulos com informações do utilizador atual
         if self.participante_atual is None:
             self.label_email.config(text="Email atual: -")
             self.label_tentativas.config(text="Tentativas disponíveis: -")
@@ -585,6 +645,7 @@ class RolPremios:
         )
 
     def preparar_proximo_participante(self):
+        # Solicita um novo email e prepara o participante para jogar
         while True:
             email = pedir_email_valido(self.root)
 
@@ -614,6 +675,7 @@ class RolPremios:
             break
 
     def perguntar_novo_email(self):
+        # Avisa o utilizador que terminou as tentativas e pede novo email
         messagebox.showinfo(
             "Fim do jogo",
             "As tentativas deste email terminaram.\n"
@@ -623,11 +685,12 @@ class RolPremios:
         self.preparar_proximo_participante()
 
     def recarregar_premios_do_ficheiro(self):
+        # Recarrega os prémios a partir do ficheiro CSV e atualiza a roleta
         try:
             sincronizar_premios_com_ficheiro()
             self.recarregar_premios()
             self.desenhar_roda()
-            self.label_info.config(text="Prémios recarregados a partir do ficheiro com sucesso.")
+            self.label_info.config(text="Prémios recarregados com sucesso.")
         except Exception as e:
             messagebox.showerror(
                 "Erro ao recarregar prémios",
@@ -636,27 +699,52 @@ class RolPremios:
             )
 
     def recarregar_premios(self):
+        # Sincroniza os prémios com o ficheiro e calcula o ângulo de cada segmento
         sincronizar_premios_com_ficheiro()
         self.premios = obter_premios_ativos()
         self.numero_segmentos = len(self.premios)
         self.angulo_segmento = 360 / self.numero_segmentos if self.numero_segmentos > 0 else 360
 
     def desenhar_roda(self):
+        # Limpa todos os segmentos anteriores
         self.canvas.delete("segmento")
 
+        # Se não houver prémios, exibe mensagem
         if not self.premios:
             self.canvas.create_text(
-                250, 220,
-                text="Sem prémios.\nCrie o ficheiro com o nome premios.csv com os prémios para mostrar.",
-                font=("Arial", 14, "bold"),
+                260, 260,
+                text="Sem prémios.\nCrie o ficheiro premios.csv\ncom os prémios para exibir.",
+                font=("Arial", 12, "bold"),
                 justify="center",
-                tags="segmento"
+                tags="segmento",
+                fill="#ffffff"
             )
             return
 
+        # Desenha o fundo externo decorativo (aro)
+        self.canvas.create_oval(
+            self.centro_x - self.raio_roleta - 8,
+            self.centro_y - self.raio_roleta - 8,
+            self.centro_x + self.raio_roleta + 8,
+            self.centro_y + self.raio_roleta + 8,
+            fill="#333333",
+            outline="#ffaa00",
+            width=4,
+            tags="segmento"
+        )
+
+        # Desenha cada segmento da roleta estilo casino
         for i, premio in enumerate(self.premios):
+            # Calcula o ângulo de início do segmento
             angulo_inicio = self.angulo_atual + (i * self.angulo_segmento)
 
+            # Alterna entre cores casino (vermelho e preto com detalhes dourados)
+            if i % 2 == 0:
+                cor_fundo = "#cc0000"    # Vermelho casino
+            else:
+                cor_fundo = "#1a1a1a"    # Preto casino
+
+            # Desenha o arco (segmento) da roleta
             self.canvas.create_arc(
                 self.centro_x - self.raio_roleta,
                 self.centro_y - self.raio_roleta,
@@ -664,17 +752,37 @@ class RolPremios:
                 self.centro_y + self.raio_roleta,
                 start=angulo_inicio,
                 extent=self.angulo_segmento,
-                fill=premio["cor"],
-                outline="black",
+                fill=cor_fundo,
+                outline="#ffaa00",  # Borda dourada
                 width=2,
                 tags="segmento"
             )
 
+            # Se a cor do prémio for especificada, usa-a
+            if premio["cor"].strip().lower() != "#000000" and premio["cor"].strip():
+                try:
+                    self.canvas.create_arc(
+                        self.centro_x - self.raio_roleta,
+                        self.centro_y - self.raio_roleta,
+                        self.centro_x + self.raio_roleta,
+                        self.centro_y + self.raio_roleta,
+                        start=angulo_inicio,
+                        extent=self.angulo_segmento,
+                        fill=premio["cor"],
+                        outline="#ffaa00",
+                        width=2,
+                        tags="segmento"
+                    )
+                except:
+                    pass
+
+            # Calcula a posição do texto no meio do segmento
             angulo_meio = angulo_inicio + self.angulo_segmento / 2
             rad = math.radians(angulo_meio)
-            x = self.centro_x + 120 * math.cos(rad)
-            y = self.centro_y - 120 * math.sin(rad)
+            x = self.centro_x + 115 * math.cos(rad)
+            y = self.centro_y - 115 * math.sin(rad)
 
+            # Desenha o texto do prémio com cor branca para contraste
             self.canvas.create_text(
                 x,
                 y,
@@ -682,14 +790,54 @@ class RolPremios:
                 font=("Arial", 9, "bold"),
                 width=85,
                 justify="center",
-                tags="segmento"
+                tags="segmento",
+                fill="#ffffff"
             )
 
+        # Desenha o círculo central (hub) estilo casino
+        raio_hub = 40
+        self.canvas.create_oval(
+            self.centro_x - raio_hub,
+            self.centro_y - raio_hub,
+            self.centro_x + raio_hub,
+            self.centro_y + raio_hub,
+            fill="#ffaa00",              # Dourado
+            outline="#333333",
+            width=3,
+            tags="segmento"
+        )
+
+        # Círculo interior do hub
+        self.canvas.create_oval(
+            self.centro_x - raio_hub + 8,
+            self.centro_y - raio_hub + 8,
+            self.centro_x + raio_hub - 8,
+            self.centro_y + raio_hub - 8,
+            fill="#ff8800",              # Laranja
+            outline="#ffaa00",
+            width=1,
+            tags="segmento"
+        )
+
+        # Ponto central
+        self.canvas.create_oval(
+            self.centro_x - 5,
+            self.centro_y - 5,
+            self.centro_x + 5,
+            self.centro_y + 5,
+            fill="#333333",
+            outline="#ffaa00",
+            width=1,
+            tags="segmento"
+        )
+
     def escolher_premio_por_peso(self):
+        # Seleciona um prémio aleatoriamente baseado nos pesos atuais
         pesos = [float(p["peso_atual"]) for p in self.premios]
         return random.choices(self.premios, weights=pesos, k=1)[0]
 
     def iniciar_girar(self):
+        # Inicia o processo de girar a roleta
         if self.a_girar:
             return
 
@@ -765,10 +913,13 @@ class RolPremios:
         self.animar_roda()
 
     def animar_roda(self):
+        # Anima a rotação da roleta com suavização
         if self.frame_atual < self.total_frames:
+            # Calcula o progresso com easing ease-out (suavização gradual)
             t = self.frame_atual / self.total_frames
             progresso = 1 - pow(1 - t, 3)
 
+            # Atualiza o ângulo atual interpolado
             self.angulo_atual = (
                 self.angulo_inicial_animacao
                 + (self.angulo_final_animacao - self.angulo_inicial_animacao) * progresso
@@ -778,13 +929,16 @@ class RolPremios:
             self.frame_atual += 1
             self.root.after(20, self.animar_roda)
         else:
+            # Finaliza a animação
             self.angulo_atual = self.angulo_final_animacao % 360
             self.desenhar_roda()
             self.finalizar_giro()
 
     def finalizar_giro(self):
+        # Finaliza o giro e regista o resultado
         premio = self.premio_sorteado
 
+        # Regista a jogada na base de dados
         registar_jogada(
             id_participante=self.participante_atual["id"],
             email=self.participante_atual["email"],
@@ -795,16 +949,19 @@ class RolPremios:
 
         mensagem_extra = "Tentativa concluída."
 
+        # Verifica se o prémio é "Tente novamente"
         if premio["nome"].strip().lower() == "tente novamente":
             alterar_tentativas(self.email_atual, 1)
             mensagem_extra = "Saiu 'Tente novamente': ganhou mais uma tentativa."
 
+        # Recalcula os pesos baseado no novo histórico
         recalcular_pesos()
 
         self.participante_atual = obter_participante_por_email(self.email_atual)
         self.recarregar_premios()
         self.atualizar_labels_participante()
 
+        # Exibe o resultado
         self.label_resultado.config(text=f"Prémio: {premio['nome']}")
         self.label_info.config(
             text=(
@@ -816,6 +973,7 @@ class RolPremios:
         self.a_girar = False
         self.btn_girar.config(state="normal")
 
+        # Se não houver mais tentativas, pede novo email
         if self.participante_atual["tentativas_disponiveis"] <= 0:
             self.root.after(500, self.perguntar_novo_email)
 
@@ -824,13 +982,16 @@ class RolPremios:
 # ARRANQUE DO PROGRAMA
 # =========================================================
 if __name__ == "__main__":
+    # Cria as tabelas da base de dados
     criar_tabelas()
 
+    # Sincroniza os prémios a partir do ficheiro CSV
     try:
         sincronizar_premios_com_ficheiro()
     except Exception as e:
         print(f"Aviso ao arrancar: {e}")
 
+    # Inicializa a janela principal
     root = tk.Tk()
     app = RolPremios(root)
     root.mainloop()
